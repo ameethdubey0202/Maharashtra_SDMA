@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAAVAT Resilience Dashboard – SDMA Maharashtra</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    /* Primary Colors - Command Center Aesthetic */
+    --primary: #0F5A8F;
+    --primary-light: #E8F2F9;
+    --primary-dark: #053A5F;
+    
+    /* Accent Colors - Operational Signals */
+    --accent-orange: #D97E3A;
+    --accent-orange-light: #F5E8DF;
+    --accent-green: #2E7D32;
+    --accent-green-light: #E8F5E9;
+    --accent-yellow: #E8A900;
+    --accent-yellow-light: #FFF8E1;
+    --accent-red: #C62828;
+    --accent-red-light: #FFEBEE;
+    
+    /* Neutral Colors */
+    --bg: #F5F7FA;
+    --surface: #FFFFFF;
+    --surface-alt: #F9FAFB;
+    --border: #D5DDE5;
+    --border-light: #E8EDF3;
+    
+    /* Text Colors */
+    --text-primary: #0F1419;
+    --text-secondary: #3E4A5C;
+    --text-tertiary: #6B7A8C;
+    --text-muted: #8B95A5;
+    
+    /* Shadows - Refined */
+    --shadow-sm: 0 1px 3px rgba(15,20,25,0.08);
+    --shadow-md: 0 2px 8px rgba(15,20,25,0.12);
+    --shadow-lg: 0 4px 16px rgba(15,20,25,0.15);
+    --shadow-xl: 0 8px 24px rgba(15,20,25,0.18);
+    
+    /* Spacing & Radius */
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-lg: 14px;
+    --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+
+    /* Disaster Mode */
+    --dm-bg: #0A0E12;
+    --dm-surface: #131820;
+    --dm-surface-alt: #1A2230;
+    --dm-border: #2A3540;
+    --dm-text-primary: #F0F4F8;
+    --dm-text-secondary: #B8C5D6;
+    --dm-text-tertiary: #7A8A9E;
+  }
+
+  .disaster-mode {
+    --bg: var(--dm-bg);
+    --surface: var(--dm-surface);
+    --surface-alt: var(--dm-surface-alt);
+    --border: var(--dm-border);
+    --border-light: #3A4A5A;
+    --text-primary: var(--dm-text-primary);
+    --text-secondary: var(--dm-text-secondary);
+    --text-tertiary: var(--dm-text-tertiary);
+    --primary: #FF6B3A;
+    --accent-red: #FF5252;
+    --accent-green: #4CAF50;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: var(--transition);
+    line-height: 1.5;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* HEADER & COMMAND BAR */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-badge {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(15,90,143,0.25);
+    flex-shrink: 0;
+  }
+
+  .header-titles h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .header-titles p {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'Roboto Mono', monospace;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-green-light);
+    color: var(--accent-green);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .timestamp {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+
+  .disaster-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    user-select: none;
+  }
+
+  .disaster-toggle:hover {
+    border-color: var(--accent-orange);
+    color: var(--accent-orange);
+  }
+
+  .disaster-toggle.active {
+    background: var(--accent-red-light);
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+  }
+
+  .toggle-dot {
+    width: 28px;
+    height: 16px;
+    background: var(--border);
+    border-radius: 8px;
+    position: relative;
+    transition: var(--transition);
+  }
+
+  .disaster-toggle.active .toggle-dot {
+    background: var(--accent-red);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* TAB BAR */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
+  .tab-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0;
+    padding: 0 32px;
+    overflow-x: auto;
+    position: sticky;
+    top: 72px;
+    z-index: 99;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 14px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border-bottom: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover {
+    color: var(--primary);
+  }
+
+  .tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .tab-icon {
+    font-size: 16px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* MAIN CONTENT */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
+  .main {
+    padding: 24px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* KPI CARDS */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), transparent);
+  }
+
+  .kpi-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  .kpi-icon {
+    font-size: 24px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace;
+    line-height: 1.2;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .kpi-trend {
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+  }
+
+  .kpi-trend.up { color: var(--accent-green); }
+  .kpi-trend.down { color: var(--accent-red); }
+
+  /* Disaster Mode KPI Highlighting */
+  .disaster-mode .kpi-card.risk-highlight {
+    border-color: var(--accent-red);
+    box-shadow: 0 0 16px rgba(198, 40, 40, 0.3);
+  }
+
+  .disaster-mode .kpi-card.risk-highlight::before {
+    background: linear-gradient(90deg, var(--accent-red), transparent);
+    animation: riskPulse 2s infinite;
+  }
+
+  @keyframes riskPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* CARDS & LAYOUT */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .card-subtitle {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* SLIDERS & INPUTS */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .slider-group {
+    margin-bottom: 16px;
+  }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .slider-val {
+    font-family: 'Roboto Mono', monospace;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(15,90,143,0.3);
+    transition: var(--transition);
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 4px 12px rgba(15,90,143,0.4);
+    transform: scale(1.1);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(15,90,143,0.3);
+    transition: var(--transition);
+  }
+
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  select:hover {
+    border-color: var(--primary);
+  }
+
+  select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15,90,143,0.1);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* CHARTS */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+  }
+
+  .chart-wrap.tall { height: 280px; }
+  .chart-wrap.short { height: 180px; }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* TABLES */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .rank-table thead {
+    background: var(--surface-alt);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .rank-table th {
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .rank-table tbody tr {
+    border-bottom: 1px solid var(--border-light);
+    transition: var(--transition);
+  }
+
+  .rank-table tbody tr:hover {
+    background: var(--surface-alt);
+  }
+
+  .rank-table td {
+    padding: 12px 14px;
+    color: var(--text-secondary);
+  }
+
+  .rank-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-alt);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .rank-num.rank-1 { background: #FFD700; color: #8B4513; }
+  .rank-num.rank-2 { background: #C0C0C0; color: #333; }
+  .rank-num.rank-3 { background: #CD7F32; color: #fff; }
+
+  .score-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s ease;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .badge-green { background: var(--accent-green-light); color: var(--accent-green); }
+  .badge-blue { background: var(--primary-light); color: var(--primary); }
+  .badge-yellow { background: var(--accent-yellow-light); color: #7A5200; }
+  .badge-red { background: var(--accent-red-light); color: var(--accent-red); }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* RESILIENCE INDEX DISPLAY */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .resilience-display {
+    background: linear-gradient(135deg, var(--primary-light), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+
+  .ri-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+
+  .ri-value {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: 'Roboto Mono', monospace;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .ri-grade {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* SCORE ITEMS */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .score-item {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    transition: var(--transition);
+  }
+
+  .score-item:hover {
+    background: var(--surface);
+    border-color: var(--primary);
+  }
+
+  .score-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .score-value {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+    color: var(--primary);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* PREPAREDNESS LEVELS */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .prep-level {
+    padding: 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    transition: var(--transition);
+    text-align: center;
+    border: 2px solid;
+  }
+
+  .prep-low { background: var(--accent-red-light); color: var(--accent-red); border-color: var(--accent-red); }
+  .prep-moderate { background: var(--accent-yellow-light); color: #7A5200; border-color: var(--accent-yellow); }
+  .prep-high { background: var(--accent-green-light); color: var(--accent-green); border-color: var(--accent-green); }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* BCC STAGES */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .bcc-stage {
+    text-align: center;
+    padding: 16px 12px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    transition: var(--transition);
+    background: var(--surface);
+  }
+
+  .bcc-stage:hover {
+    transform: translateY(-2px);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* GP CLUSTER */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  .health-indicator {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    margin-bottom: 12px;
+    font-weight: 700;
+    transition: var(--transition);
+  }
+
+  .health-active { background: var(--accent-green-light); color: var(--accent-green); }
+  .health-partial { background: var(--accent-yellow-light); color: #7A5200; }
+  .health-weak { background: var(--accent-red-light); color: var(--accent-red); }
+
+  .gp-list { list-style: none; }
+
+  .gp-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    transition: var(--transition);
+  }
+
+  .gp-item:last-child { border-bottom: none; }
+  .gp-item:hover { background: var(--surface-alt); }
+
+  .gp-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .gp-meta {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-family: 'Roboto Mono', monospace;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* RESPONSIVE */
+  /* ─────────────────────────────────────────────────────────────────────── */
+
+  @media (max-width: 1400px) {
+    .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+    .grid-2-1 { grid-template-columns: 1fr; }
+    .grid-1-2 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 1024px) {
+    .main { padding: 16px; }
+    .header { padding: 12px 16px; }
+    .tab-bar { padding: 0 16px; }
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .header { padding: 10px 12px; height: 64px; }
+    .header-titles h1 { font-size: 13px; }
+    .header-titles p { font-size: 10px; }
+    .tab-bar { padding: 0 12px; top: 64px; }
+    .tab-btn { padding: 12px 12px; font-size: 11px; }
+    .main { padding: 12px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .kpi-card { padding: 14px; }
+    .kpi-value { font-size: 22px; }
+    .card-body { padding: 12px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .logo-badge { width: 40px; height: 40px; font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-badge">🛡️</div>
+    <div class="header-titles">
+      <h1>GAAVAT Resilience Dashboard — SDMA Maharashtra</h1>
+      <p>PREPAREDNESS INTELLIGENCE SYSTEM (OPERATIONAL DSS) · V2.2 · HYBRID EDITION</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <div class="timestamp" id="clock">00:00:00</div>
+    <div class="disaster-toggle" id="disasterToggle" onclick="toggleDisasterMode()" title="Toggle Disaster Mode">
+      <div class="toggle-dot"></div>
+      <span id="dm-label">Normal</span>
+    </div>
+  </div>
+</header>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab(0)" data-tab="0">
+    <span class="tab-icon">🗺️</span> State Command View
+  </button>
+  <button class="tab-btn" onclick="switchTab(1)" data-tab="1">
+    <span class="tab-icon">📊</span> District Performance
+  </button>
+  <button class="tab-btn" onclick="switchTab(2)" data-tab="2">
+    <span class="tab-icon">🏘️</span> GP Cluster View
+  </button>
+  <button class="tab-btn" onclick="switchTab(3)" data-tab="3">
+    <span class="tab-icon">🧠</span> Behaviour & Preparedness
+  </button>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: STATE COMMAND VIEW -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-0">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-icon">🎯</span>
+        <div class="kpi-label">Total GAAVAT Events</div>
+        <div class="kpi-value" id="kpi-events">214</div>
+        <div class="kpi-sub"><span class="kpi-trend up">↑ 18%</span> vs last quarter</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">👥</span>
+        <div class="kpi-label">Citizens Reached</div>
+        <div class="kpi-value" id="kpi-citizens">68,420</div>
+        <div class="kpi-sub"><span class="kpi-trend up">↑ 22%</span> this cycle</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">📍</span>
+        <div class="kpi-label">Active Districts</div>
+        <div class="kpi-value" id="kpi-districts">31/36</div>
+        <div class="kpi-sub">86% coverage achieved</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">🏘️</span>
+        <div class="kpi-label">GP Coverage</div>
+        <div class="kpi-value" id="kpi-gp">62%</div>
+        <div class="kpi-sub"><span class="kpi-trend up">↑ 8pp</span> since Cycle 3</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">⚡</span>
+        <div class="kpi-label">Resilience Index</div>
+        <div id="kpi-ri-wrap">
+          <div class="kpi-value" id="kpi-ri">72</div>
+          <div class="kpi-sub">State Average · <span style="color:var(--accent-green);font-weight:700">GOOD</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAP & RANKINGS -->
+    <div class="grid-2-1" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🗺️ Maharashtra District Map — Performance Heatmap</div>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <svg id="maharashtra-map" width="100%" height="320" style="display: block;"></svg>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="card-header">
+            <div class="card-title">🏆 Top 5 Performers</div>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="rank-table" id="top5-table"></table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚠️ Bottom 5 — Intervention Needed</div>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="rank-table" id="bot5-table"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE TREND CHART -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📈 State Resilience Trend — 6-Cycle Progression</div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap"><canvas id="stateLineChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: DISTRICT PERFORMANCE -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-1">
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📍 Select District</div>
+          </div>
+          <div class="card-body">
+            <select id="districtSelect" onchange="updateDistrict()"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎛️ Performance Parameters</div>
+        </div>
+        <div class="card-body">
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>🎯 GAAVAT Events (0-12)</span>
+              <span class="slider-val" id="v-events">6</span>
+            </div>
+            <input type="range" min="0" max="12" value="6" id="s-events" oninput="updateDistrictSliders()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>👥 Participation Score (0-100)</span>
+              <span class="slider-val" id="v-part">50</span>
+            </div>
+            <input type="range" min="0" max="100" value="50" id="s-part" oninput="updateDistrictSliders()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>🏛️ Department Capacity (0-100)</span>
+              <span class="slider-val" id="v-dept">50</span>
+            </div>
+            <input type="range" min="0" max="100" value="50" id="s-dept" oninput="updateDistrictSliders()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>📢 IEC Effectiveness (0-100)</span>
+              <span class="slider-val" id="v-iec">50</span>
+            </div>
+            <input type="range" min="0" max="100" value="50" id="s-iec" oninput="updateDistrictSliders()">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="card-header">
+            <div class="card-title">⚡ Resilience Index</div>
+          </div>
+          <div class="card-body">
+            <div class="resilience-display">
+              <div class="ri-label">District Resilience Index</div>
+              <div class="ri-value" id="dist-ri-val">50</div>
+              <div class="ri-grade" id="dist-ri-grade">AVERAGE PERFORMANCE</div>
+              <div style="font-size: 10px; opacity: 0.7; margin-top: 8px;">Activity · Coverage · Capacity · IEC</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Component Scores</div>
+          </div>
+          <div class="card-body">
+            <div class="score-item">
+              <span class="score-label">Participation</span>
+              <span><span class="score-value" id="sc-part">50</span> <span class="badge badge-yellow" id="sc-part-g">AVERAGE</span></span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">IEC Score</span>
+              <span><span class="score-value" id="sc-iec">50</span> <span class="badge badge-yellow" id="sc-iec-g">AVERAGE</span></span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">Behaviour</span>
+              <span><span class="score-value" id="sc-beh">50</span> <span class="badge badge-yellow" id="sc-beh-g">AVERAGE</span></span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">Overall</span>
+              <span><span class="score-value" id="sc-overall">50</span> <span class="badge badge-yellow" id="sc-overall-g">AVERAGE</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 Department Capacity Breakdown</div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="deptBarChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 Audience Reach Distribution</div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="audiencePieChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📈 Performance Across 6 Cycles</div>
+        <span class="card-subtitle">Activity, Behaviour, IEC Scores</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap tall"><canvas id="distCycleChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 3: GP CLUSTER VIEW -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-2">
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🏘️ Select District for GP Cluster</div>
+          </div>
+          <div class="card-body">
+            <select id="gpDistrictSelect" onchange="updateGPCluster()"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎯 Model GP & Cluster Structure</div>
+        </div>
+        <div class="card-body">
+          <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: 8px;">Model Gram Panchayat</div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);" id="model-gp-name">—</div>
+            <div style="font-size: 11px; color: var(--text-tertiary); font-family: 'Roboto Mono', monospace; margin-top: 4px;" id="model-gp-meta">—</div>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: 8px;">Supporting GPs</div>
+            <ul class="gp-list" id="supporting-gp-list"></ul>
+          </div>
+
+          <div style="padding-top: 16px; border-top: 1px solid var(--border); text-align: center;">
+            <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px;">Total Cluster Size</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--primary); font-family: 'Roboto Mono', monospace;" id="gp-cluster-count">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="card-header">
+            <div class="card-title">🟢 Cluster Health Status</div>
+          </div>
+          <div class="card-body">
+            <div class="health-indicator" id="cluster-health">
+              <div id="cluster-health-label">🟡 PARTIAL ENGAGEMENT</div>
+              <div style="font-size: 11px; color: inherit; margin-top: 8px;" id="cluster-health-sub">Cluster status will update based on engagement.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎛️ Cluster Engagement</div>
+          </div>
+          <div class="card-body">
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>Engagement Score</span>
+                <span class="slider-val" id="v-gp-eng">50</span>
+              </div>
+              <input type="range" min="0" max="100" value="50" id="s-gp-eng" oninput="updateGPEngagement()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLUSTER NETWORK & CHARTS -->
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🕸️ Cluster Network Visualization</div>
+        </div>
+        <div class="card-body">
+          <div style="min-height: 280px; display: flex; align-items: center; justify-content: center; position: relative; padding: 10px;">
+            <canvas id="clusterNetworkCanvas" width="560" height="260" style="width: 100%; height: 260px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Cluster Summary</div>
+        </div>
+        <div class="card-body" id="gp-summary-panel" style="font-size: 12px; line-height: 2; color: var(--text-secondary);">
+          Select a district to view cluster summary.
+        </div>
+      </div>
+    </div>
+
+    <!-- GP METRICS -->
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 GP Activity Scores</div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="gpBarChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 4: BEHAVIOUR & PREPAREDNESS -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-3">
+    <div class="grid-2-1" style="margin-bottom: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- BEHAVIOUR SLIDERS -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎛️ Behaviour Indicators</div>
+          </div>
+          <div class="card-body">
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>🎒 Households with Go-Bag (%)</span>
+                <span class="slider-val" id="v-gobag">38</span>
+              </div>
+              <input type="range" min="0" max="100" value="38" id="s-gobag" oninput="updateBehaviour()">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>🚶 Evacuation Awareness (%)</span>
+                <span class="slider-val" id="v-evac">55</span>
+              </div>
+              <input type="range" min="0" max="100" value="55" id="s-evac" oninput="updateBehaviour()">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>🩺 CPR Trained (%)</span>
+                <span class="slider-val" id="v-cpr">22</span>
+              </div>
+              <input type="range" min="0" max="100" value="22" id="s-cpr" oninput="updateBehaviour()">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>👩 SHG Participation (%)</span>
+                <span class="slider-val" id="v-shg">61</span>
+              </div>
+              <input type="range" min="0" max="100" value="61" id="s-shg" oninput="updateBehaviour()">
+            </div>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>📞 Emergency Contact Awareness (%)</span>
+                <span class="slider-val" id="v-emer">47</span>
+              </div>
+              <input type="range" min="0" max="100" value="47" id="s-emer" oninput="updateBehaviour()">
+            </div>
+          </div>
+        </div>
+
+        <!-- PREPAREDNESS LEVEL -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Community Preparedness Level</div>
+          </div>
+          <div class="card-body">
+            <div class="prep-level prep-moderate" id="prep-level-display">
+              🟡 MODERATE PREPAREDNESS
+            </div>
+            <div style="margin-top: 14px; font-size: 12px; color: var(--text-secondary); line-height: 1.8;" id="prep-advice">
+              Communities show partial preparedness. Focus on increasing go-bag adoption and CPR training coverage to achieve HIGH level.
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPOSITE RI -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚡ Composite Resilience Index</div>
+          </div>
+          <div class="card-body">
+            <div class="resilience-display">
+              <div class="ri-label">Community Resilience</div>
+              <div class="ri-value" id="comp-ri">64</div>
+              <div class="ri-grade" id="comp-ri-grade">AVERAGE PERFORMANCE</div>
+              <div style="font-size: 10px; opacity: 0.7; margin-top: 8px;">Activity · Coverage · Capacity · Behaviour · Preparedness</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT CHARTS -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📈 Behaviour Adoption Curve</div>
+              <span class="card-subtitle">6-Cycle Progression</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap tall"><canvas id="behavLineChart"></canvas></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🕸️ Preparedness Radar</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap tall"><canvas id="radarChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BCC STAGES -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔄 Behaviour Change Communication Stage Progression</div>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+              <div id="stage-awareness" class="bcc-stage">
+                <div style="font-size: 24px; margin-bottom: 8px;">👁️</div>
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary);">AWARENESS</div>
+                <div style="font-size: 20px; font-weight: 700; font-family: 'Roboto Mono', monospace; margin-top: 6px;" id="stage-awareness-val">--</div>
+                <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">Know the hazard</div>
+              </div>
+              <div id="stage-action" class="bcc-stage">
+                <div style="font-size: 24px; margin-bottom: 8px;">🎒</div>
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary);">ACTION</div>
+                <div style="font-size: 20px; font-weight: 700; font-family: 'Roboto Mono', monospace; margin-top: 6px;" id="stage-action-val">--</div>
+                <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">Prepare go-bag</div>
+              </div>
+              <div id="stage-habit" class="bcc-stage">
+                <div style="font-size: 24px; margin-bottom: 8px;">🔁</div>
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary);">HABIT</div>
+                <div style="font-size: 20px; font-weight: 700; font-family: 'Roboto Mono', monospace; margin-top: 6px;" id="stage-habit-val">--</div>
+                <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">Regular drills</div>
+              </div>
+              <div id="stage-advocacy" class="bcc-stage">
+                <div style="font-size: 24px; margin-bottom: 8px;">📢</div>
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary);">ADVOCACY</div>
+                <div style="font-size: 20px; font-weight: 700; font-family: 'Roboto Mono', monospace; margin-top: 6px;" id="stage-advocacy-val">--</div>
+                <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">Train others</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BEHAVIOUR TABLE -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Behaviour Indicator Tracking</div>
+            <span class="card-subtitle">Year 1 Target vs Current</span>
+          </div>
+          <div class="card-body" style="padding: 0 0 8px;">
+            <table class="rank-table" id="behav-table">
+              <thead>
+                <tr>
+                  <th style="padding-left: 20px;">Indicator</th>
+                  <th>Current</th>
+                  <th>Target (Y1)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="behav-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+//   DATA STRUCTURES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const DISTRICTS = [
+  {name:"Nashik", score:89, hazard:"Flood", tier:"NDMA", region:"Western"},
+  {name:"Raigad", score:87, hazard:"Landslide", tier:"NDMA", region:"Konkan"},
+  {name:"Ratnagiri", score:85, hazard:"Cyclone", tier:"NDMA", region:"Konkan"},
+  {name:"Pune", score:83, hazard:"Earthquake", tier:"NDMA", region:"Western"},
+  {name:"Thane", score:81, hazard:"Flood", tier:"NDMA", region:"Konkan"},
+  {name:"Nagpur", score:79, hazard:"Lightning", tier:"State", region:"Vidarbha"},
+  {name:"Kolhapur", score:77, hazard:"Flood", tier:"State", region:"Western"},
+  {name:"Aurangabad", score:74, hazard:"Heatwave", tier:"State", region:"Marathwada"},
+  {name:"Latur", score:73, hazard:"Earthquake", tier:"NDMA", region:"Marathwada"},
+  {name:"Sangli", score:71, hazard:"Drought", tier:"NDMA", region:"Western"},
+  {name:"Solapur", score:68, hazard:"Drought", tier:"State", region:"Western"},
+  {name:"Ahmednagar", score:66, hazard:"Drought", tier:"State", region:"Western"},
+  {name:"Satara", score:65, hazard:"Flood", tier:"State", region:"Western"},
+  {name:"Jalgaon", score:63, hazard:"Flood", tier:"State", region:"North"},
+  {name:"Amravati", score:61, hazard:"Lightning", tier:"State", region:"Vidarbha"},
+  {name:"Wardha", score:59, hazard:"Lightning", tier:"State", region:"Vidarbha"},
+  {name:"Buldhana", score:58, hazard:"Drought", tier:"State", region:"Vidarbha"},
+  {name:"Akola", score:56, hazard:"Heatwave", tier:"State", region:"Vidarbha"},
+  {name:"Yavatmal", score:54, hazard:"Drought", tier:"State", region:"Vidarbha"},
+  {name:"Chandrapur", score:52, hazard:"Flood", tier:"State", region:"Vidarbha"},
+  {name:"Gadchiroli", score:51, hazard:"Flood", tier:"State", region:"Vidarbha"},
+  {name:"Washim", score:49, hazard:"Drought", tier:"State", region:"Vidarbha"},
+  {name:"Hingoli", score:47, hazard:"Drought", tier:"State", region:"Marathwada"},
+  {name:"Nanded", score:45, hazard:"Flood", tier:"State", region:"Marathwada"},
+  {name:"Osmanabad", score:44, hazard:"Drought", tier:"State", region:"Marathwada"},
+  {name:"Bid", score:43, hazard:"Drought", tier:"State", region:"Marathwada"},
+  {name:"Jalna", score:42, hazard:"Drought", tier:"State", region:"Marathwada"},
+  {name:"Parbhani", score:41, hazard:"Drought", tier:"State", region:"Marathwada"},
+  {name:"Dhule", score:58, hazard:"Flood", tier:"State", region:"North"},
+  {name:"Nandurbar", score:55, hazard:"Flood", tier:"State", region:"North"},
+  {name:"Sindhudurg", score:72, hazard:"Cyclone", tier:"State", region:"Konkan"},
+  {name:"Mumbai City", score:76, hazard:"Cyclone", tier:"State", region:"Mumbai"},
+  {name:"Mumbai Sub.", score:74, hazard:"Flood", tier:"State", region:"Mumbai"},
+  {name:"Palghar", score:67, hazard:"Cyclone", tier:"State", region:"Konkan"},
+  {name:"Gondia", score:53, hazard:"Flood", tier:"State", region:"Vidarbha"},
+  {name:"Bhandara", score:50, hazard:"Flood", tier:"State", region:"Vidarbha"},
+];
+
+const GP_CLUSTERS = {
+  "Ratnagiri": {
+    model: {name:"Shirali GP", taluka:"Lanja", score:91},
+    supporting:[
+      {name:"Aambolgad GP", score:78, status:"active"},
+      {name:"Devgad GP", score:71, status:"active"},
+      {name:"Kelshi GP", score:64, status:"partial"},
+      {name:"Mirya GP", score:58, status:"partial"},
+    ]
+  },
+  "Nashik": {
+    model: {name:"Niphad GP", taluka:"Niphad", score:88},
+    supporting:[
+      {name:"Sinner GP", score:82, status:"active"},
+      {name:"Baglan GP", score:75, status:"active"},
+      {name:"Surgana GP", score:68, status:"partial"},
+    ]
+  },
+  "Raigad": {
+    model: {name:"Mahad GP", taluka:"Mahad", score:85},
+    supporting:[
+      {name:"Khopoli GP", score:79, status:"active"},
+      {name:"Rohan GP", score:72, status:"active"},
+      {name:"Sudhagad GP", score:65, status:"partial"},
+      {name:"Mohan GP", score:58, status:"weak"},
+    ]
+  },
+  "Pune": {
+    model: {name:"Indapur GP", taluka:"Indapur", score:80},
+    supporting:[
+      {name:"Daund GP", score:74, status:"active"},
+      {name:"Bhor GP", score:68, status:"partial"},
+      {name:"Khed GP", score:62, status:"partial"},
+    ]
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   CHART INSTANCES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let stateLineChart, deptBarChart, audiencePieChart, distCycleChart;
+let behavLineChart, radarChart, gpBarChart;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function getGrade(score) {
+  if (score >= 85) return 'EXCELLENT';
+  if (score >= 70) return 'GOOD';
+  if (score >= 50) return 'AVERAGE';
+  return 'CRITICAL';
+}
+
+function getBadgeClass(score) {
+  if (score >= 85) return 'badge-green';
+  if (score >= 70) return 'badge-blue';
+  if (score >= 50) return 'badge-yellow';
+  return 'badge-red';
+}
+
+function chartDefaults() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { font: { family: 'Inter', size: 11 }, color: 'var(--text-secondary)', padding: 12 } }
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   CHART INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initStateLineChart() {
+  const ctx = document.getElementById('stateLineChart').getContext('2d');
+  stateLineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Cycle 1','Cycle 2','Cycle 3','Cycle 4','Cycle 5','Cycle 6'],
+      datasets: [
+        {label:'Resilience Index', data:[58,62,66,69,71,72], borderColor:'var(--primary)', tension:0.4, fill:false, pointRadius:5, pointBackgroundColor:'var(--primary)'},
+        {label:'Activity Score', data:[50,55,60,64,68,70], borderColor:'var(--accent-orange)', tension:0.4, fill:false, pointRadius:4},
+        {label:'Preparedness Score', data:[45,50,55,60,65,68], borderColor:'var(--accent-green)', tension:0.4, fill:false, pointRadius:4},
+      ]
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { display: false } },
+        y: { max: 100, ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { color: 'rgba(0,0,0,0.05)' } }
+      }
+    }
+  });
+}
+
+function initDeptBarChart() {
+  const ctx = document.getElementById('deptBarChart').getContext('2d');
+  deptBarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Admin','Finance','Ops','Planning','Training','Comms','Logistics','Coord'],
+      datasets: [{
+        data: [50,50,50,50,50,50,50,50],
+        backgroundColor: 'rgba(15,90,143,0.7)',
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults(),
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { family: 'Inter', size: 10 }, color: 'var(--text-secondary)' }, grid: { display: false } },
+        y: { max: 100, ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { color: 'rgba(0,0,0,0.05)' } }
+      }
+    }
+  });
+}
+
+function initAudiencePieChart() {
+  const ctx = document.getElementById('audiencePieChart').getContext('2d');
+  audiencePieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['SHG Members','Students','Citizens','Volunteers','Officials'],
+      datasets: [{
+        data: [28, 22, 25, 16, 9],
+        backgroundColor: ['var(--accent-orange)','var(--primary)','var(--accent-green)','var(--accent-yellow)','#7B68EE'],
+        borderWidth: 2,
+        borderColor: 'var(--surface)',
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      ...chartDefaults(),
+      cutout: '65%',
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { font: { family: 'Inter', size: 10 }, color: 'var(--text-secondary)', boxWidth: 10, padding: 8 }
+        }
+      }
+    }
+  });
+}
+
+function initDistCycleChart() {
+  const ctx = document.getElementById('distCycleChart').getContext('2d');
+  distCycleChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Cycle 1','Cycle 2','Cycle 3','Cycle 4','Cycle 5','Cycle 6'],
+      datasets: [
+        {label:'Activity Score', data:[65,70,72,76,80,84], backgroundColor:'rgba(15,90,143,0.7)', borderRadius:4},
+        {label:'Behaviour Score', data:[40,48,55,62,68,72], backgroundColor:'rgba(46,125,50,0.7)', borderRadius:4},
+        {label:'IEC Score', data:[50,58,63,70,72,75], backgroundColor:'rgba(217,126,58,0.6)', borderRadius:4},
+      ]
+    },
+    options: {
+      ...chartDefaults(),
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { font: { family: 'Inter', size: 10 }, boxWidth: 10, padding: 8 }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { display: false } },
+        y: { max: 100, ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+}
+
+function initBehavLineChart() {
+  const ctx = document.getElementById('behavLineChart').getContext('2d');
+  behavLineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Cycle 1','Cycle 2','Cycle 3','Cycle 4','Cycle 5','Cycle 6'],
+      datasets: [
+        {label:'Go-Bag Adoption', data:[12,20,28,34,36,38], borderColor:'var(--accent-orange)', tension:0.4, fill:false, pointRadius:4},
+        {label:'Evacuation Awareness', data:[25,34,40,48,52,55], borderColor:'var(--primary)', tension:0.4, fill:false, pointRadius:4},
+        {label:'CPR Trained', data:[5,9,14,17,20,22], borderColor:'var(--accent-green)', tension:0.4, fill:false, pointRadius:4},
+        {label:'SHG Participation', data:[28,38,45,52,57,61], borderColor:'var(--accent-yellow)', tension:0.4, fill:false, pointRadius:4},
+      ]
+    },
+    options: {
+      ...chartDefaults(),
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { family: 'Inter', size: 10 }, boxWidth: 10, padding: 8 } }
+      },
+      scales: {
+        x: { ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { display: false } },
+        y: { max: 100, ticks: { font: { family: 'Roboto Mono', size: 10 }, color: 'var(--text-tertiary)' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+}
+
+function initRadarChart() {
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Go-Bag', 'Evacuation', 'CPR', 'SHG', 'Emerg.\nContact'],
+      datasets: [{
+        label: 'Current',
+        data: [38,55,22,61,47],
+        borderColor: 'var(--primary)',
+        backgroundColor: 'rgba(15,90,143,0.15)',
+        pointBackgroundColor: 'var(--primary)',
+        borderWidth: 2,
+      },{
+        label: 'Target (Y1)',
+        data: [50,70,40,75,65],
+        borderColor: 'var(--accent-green)',
+        backgroundColor: 'rgba(46,125,50,0.06)',
+        borderDash: [4,3],
+        pointBackgroundColor: 'var(--accent-green)',
+        borderWidth: 1.5,
+      }]
+    },
+    options: {
+      ...chartDefaults(),
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 10 }, boxWidth: 10, padding: 8 } }
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, font: { family: 'Roboto Mono', size: 9 }, color: 'var(--text-tertiary)', backdropColor: 'transparent' },
+          grid: { color: 'rgba(0,0,0,0.07)' },
+          pointLabels: { font: { family: 'Inter', size: 10, weight: '600' }, color: 'var(--text-secondary)' }
+        }
+      }
+    }
+  });
+}
+
+function initGPBarChart() {
+  const ctx = document.getElementById('gpBarChart').getContext('2d');
+  gpBarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Shirali','Aambolgad','Devgad','Kelshi','Mirya'],
+      datasets: [{
+        data: [91,78,71,64,58],
+        backgroundColor: ['var(--accent-orange)','var(--accent-green)','var(--accent-green)','var(--accent-yellow)','var(--accent-yellow)'],
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults(),
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { family: 'Inter', size: 9 }, color: 'var(--text-secondary)' }, grid: { display: false } },
+        y: { max: 100, ticks: { font: { family: 'Roboto Mono', size: 9 }, color: 'var(--text-tertiary)' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   MAP GENERATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function generateMap() {
+  const svg = document.getElementById('maharashtra-map');
+  const cols = 9, rows = 4;
+  const W = 520, H = 320;
+  const pw = W / cols, ph = H / rows;
+  const gap = 2;
+
+  const layout = [
+    [0,3],[0,4],[0,5],[0,6],
+    [1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],
+    [2,0],[2,1],[2,2],[2,3],[2,4],[2,5],[2,6],[2,7],[2,8],
+    [3,1],[3,2],[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],
+    [0,7],[0,8]
+  ];
+
+  let html = '';
+  DISTRICTS.forEach((d, i) => {
+    const pos = layout[i % layout.length];
+    const x = pos[1] * pw + gap;
+    const y = pos[0] * ph + gap;
+    const w = pw - gap*2;
+    const h = ph - gap*2;
+    const color = d.score >= 85 ? 'var(--accent-green)' : d.score >= 70 ? 'var(--primary)' : d.score >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+    const opacity = 0.75 + (d.score/100)*0.25;
+    const shortName = d.name.length > 8 ? d.name.substring(0,7)+'.' : d.name;
+
+    html += `<g class="map-district" data-name="${d.name}" data-score="${d.score}">
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${color}" opacity="${opacity}" stroke="white" stroke-width="1"/>
+      <text x="${x+w/2}" y="${y+h/2-3}" text-anchor="middle" font-size="7" font-weight="700" fill="white" font-family="Inter">${shortName}</text>
+      <text x="${x+w/2}" y="${y+h/2+7}" text-anchor="middle" font-size="7" font-family="Roboto Mono" fill="rgba(255,255,255,0.85)">${d.score}</text>
+    </g>`;
+  });
+
+  svg.innerHTML = html;
+
+  const tooltip = document.createElement('div');
+  tooltip.id = 'map-tooltip';
+  tooltip.style.cssText = 'position:fixed;background:rgba(15,20,25,0.93);color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;pointer-events:none;display:none;z-index:9999;line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,0.3)';
+  document.body.appendChild(tooltip);
+
+  svg.addEventListener('mousemove', (e) => {
+    const target = e.target.closest('.map-district');
+    if (target) {
+      const d = DISTRICTS.find(x => x.name === target.dataset.name);
+      if (d) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY - 10) + 'px';
+        tooltip.innerHTML = `<strong>${d.name}</strong><br>Score: ${d.score}/100 · ${getGrade(d.score)}<br>Hazard: ${d.hazard} · ${d.tier}`;
+      }
+    } else {
+      tooltip.style.display = 'none';
+    }
+  });
+  svg.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   RANKING TABLES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function renderRankTables() {
+  const sorted = [...DISTRICTS].sort((a,b) => b.score - a.score);
+  const top5 = sorted.slice(0,5);
+  const bot5 = sorted.slice(-5).reverse();
+
+  function renderTable(id, data, isTop) {
+    const el = document.getElementById(id);
+    el.innerHTML = `<thead><tr><th style="padding-left:14px">#</th><th>District</th><th>Score</th><th>Status</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
+    data.forEach((d, i) => {
+      const rank = isTop ? i+1 : DISTRICTS.length - i;
+      const rankClass = i < 3 ? `rank-${i+1}` : '';
+      const barW = d.score;
+      const barColor = d.score >= 85 ? 'var(--accent-green)' : d.score >= 70 ? 'var(--primary)' : d.score >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+      tbody.innerHTML += `<tr>
+        <td style="padding-left:14px"><span class="rank-num ${rankClass}">${rank}</span></td>
+        <td style="font-weight:600">${d.name}<br><span style="font-size:10px;color:var(--text-tertiary);font-family:Roboto Mono,monospace">${d.hazard}</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <span style="font-weight:700;font-family:Roboto Mono,monospace;font-size:13px">${d.score}</span>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${barW}%;background:${barColor}"></div></div>
+          </div>
+        </td>
+        <td><span class="badge ${getBadgeClass(d.score)}">${getGrade(d.score)}</span></td>
+      </tr>`;
+    });
+    el.appendChild(tbody);
+  }
+
+  renderTable('top5-table', top5, true);
+  renderTable('bot5-table', bot5, false);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   DISTRICT SELECTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function populateDistrictSelects() {
+  const selects = ['districtSelect', 'gpDistrictSelect'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    DISTRICTS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.name;
+      opt.textContent = `${d.name} — ${d.hazard}`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   DISTRICT PERFORMANCE - CORE LOGIC
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function updateDistrict() {
+  const name = document.getElementById('districtSelect').value;
+  const d = DISTRICTS.find(x => x.name === name);
+  if (!d) return;
+
+  const evts = Math.round(6 + (d.score - 50) / 50 * 6);
+  const part = Math.round(40 + (d.score / 100) * 55);
+  const dept = Math.round(50 + (d.score / 100) * 45);
+  const iec = Math.round(30 + (d.score / 100) * 60);
+
+  document.getElementById('s-events').value = Math.min(12, Math.max(0, evts));
+  document.getElementById('s-part').value = part;
+  document.getElementById('s-dept').value = dept;
+  document.getElementById('s-iec').value = iec;
+
+  updateDistrictSliders();
+}
+
+function getScoreGrade(s) {
+  if (s >= 85) return 'EXCELLENT';
+  if (s >= 70) return 'GOOD';
+  if (s >= 50) return 'AVERAGE';
+  return 'LOW';
+}
+
+function updateDistrictSliders() {
+  const evts = +document.getElementById('s-events').value;
+  const part = +document.getElementById('s-part').value;
+  const dept = +document.getElementById('s-dept').value;
+  const iec = +document.getElementById('s-iec').value;
+
+  document.getElementById('v-events').textContent = evts;
+  document.getElementById('v-part').textContent = part;
+  document.getElementById('v-dept').textContent = dept;
+  document.getElementById('v-iec').textContent = iec;
+
+  // CORE CALCULATION ENGINE
+  const actScore = Math.round((evts/12)*100);
+  const partScore = part;
+  const deptScore = dept;
+  const iecScore = iec;
+  const behScore = Math.round((part * 0.5 + dept * 0.3 + iec * 0.2));
+  const overall = Math.round((actScore + partScore + deptScore + iecScore + behScore) / 5);
+
+  document.getElementById('sc-part').textContent = partScore;
+  document.getElementById('sc-part-g').textContent = getScoreGrade(partScore);
+  document.getElementById('sc-iec').textContent = iecScore;
+  document.getElementById('sc-iec-g').textContent = getScoreGrade(iecScore);
+  document.getElementById('sc-beh').textContent = behScore;
+  document.getElementById('sc-beh-g').textContent = getScoreGrade(behScore);
+  document.getElementById('sc-overall').textContent = overall;
+  document.getElementById('sc-overall-g').textContent = getScoreGrade(overall);
+
+  // RESILIENCE INDEX - Multi-factor weighted scoring
+  const ri = Math.round((actScore*0.2 + partScore*0.2 + deptScore*0.2 + iecScore*0.2 + behScore*0.2));
+  document.getElementById('dist-ri-val').textContent = ri;
+  document.getElementById('dist-ri-grade').textContent = getScoreGrade(ri) + ' PERFORMANCE';
+
+  // Update department chart with real calculations
+  if (deptBarChart) {
+    deptBarChart.data.datasets[0].data = [
+      Math.round(dept * 0.92), Math.round(dept * 0.85),
+      Math.round(dept * 0.82), Math.round(dept * 0.95),
+      Math.round(dept * 0.88), Math.round(dept * 0.75),
+      Math.round(dept * 0.71), Math.round(dept * 0.97)
+    ];
+    deptBarChart.update();
+  }
+
+  // Update state KPI
+  document.getElementById('kpi-ri').textContent = Math.round(ri * 0.7 + 72 * 0.3);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   GP CLUSTER - INTELLIGENCE SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function updateGPCluster() {
+  const name = document.getElementById('gpDistrictSelect').value;
+  const cluster = GP_CLUSTERS[name];
+  if (!cluster) return;
+
+  document.getElementById('model-gp-name').textContent = cluster.model.name;
+  document.getElementById('model-gp-meta').textContent = `Taluka: ${cluster.model.taluka} · Score: ${cluster.model.score}/100`;
+
+  const list = document.getElementById('supporting-gp-list');
+  list.innerHTML = '';
+  cluster.supporting.forEach(gp => {
+    const statusColor = gp.status === 'active' ? 'var(--accent-green)' : gp.status === 'partial' ? 'var(--accent-yellow)' : 'var(--accent-red)';
+    const statusLabel = gp.status.toUpperCase();
+    list.innerHTML += `<li class="gp-item">
+      <div>
+        <div class="gp-name">${gp.name}</div>
+        <div class="gp-meta">Score: ${gp.score}/100</div>
+      </div>
+      <span class="badge ${gp.status === 'active' ? 'badge-green' : gp.status === 'partial' ? 'badge-yellow' : 'badge-red'}">${statusLabel}</span>
+    </li>`;
+  });
+
+  document.getElementById('gp-cluster-count').textContent = cluster.supporting.length + ' GPs';
+
+  const eng = Math.round(cluster.supporting.reduce((a,b) => a + b.score, 0) / cluster.supporting.length);
+  document.getElementById('s-gp-eng').value = eng;
+  document.getElementById('v-gp-eng').textContent = eng;
+
+  updateGPEngagement();
+
+  if (gpBarChart) {
+    const names = [cluster.model.name.split(' ')[0], ...cluster.supporting.map(g => g.name.split(' ')[0])];
+    const scores = [cluster.model.score, ...cluster.supporting.map(g => g.score)];
+    const colors = [
+      'var(--accent-orange)',
+      ...cluster.supporting.map(g => g.status === 'active' ? 'var(--accent-green)' : g.status === 'partial' ? 'var(--accent-yellow)' : 'var(--accent-red)')
+    ];
+    gpBarChart.data.labels = names;
+    gpBarChart.data.datasets[0].data = scores;
+    gpBarChart.data.datasets[0].backgroundColor = colors;
+    gpBarChart.update();
+  }
+
+  const activeCount = cluster.supporting.filter(g => g.status === 'active').length;
+  const partialCount = cluster.supporting.filter(g => g.status === 'partial').length;
+  const weakCount = cluster.supporting.filter(g => g.status === 'weak').length;
+  document.getElementById('gp-summary-panel').innerHTML = `
+    <div><span style="font-weight:700;color:var(--text-primary)">District:</span> ${name}</div>
+    <div><span style="font-weight:700;color:var(--text-primary)">Model GP:</span> ${cluster.model.name}</div>
+    <div><span style="font-weight:700;color:var(--text-primary)">Supporting GPs:</span> ${cluster.supporting.length}</div>
+    <div style="border-top: 1px solid var(--border); margin: 8px 0; padding-top: 8px;"></div>
+    <div>🟢 Active: <strong>${activeCount}</strong></div>
+    <div>🟡 Partial: <strong>${partialCount}</strong></div>
+    <div>🔴 Weak: <strong>${weakCount}</strong></div>
+    <div style="border-top: 1px solid var(--border); margin: 8px 0; padding-top: 8px;"></div>
+    <div>Avg GP Score: <strong style="font-family:Roboto Mono,monospace">${eng}</strong></div>
+    <div>GAAVAT Mitra: <strong>${Math.round(cluster.supporting.length * 8 + 12)}</strong> trained</div>
+  `;
+
+  drawClusterNetwork(cluster);
+}
+
+function updateGPEngagement() {
+  const val = +document.getElementById('s-gp-eng').value;
+  document.getElementById('v-gp-eng').textContent = val;
+
+  const health = document.getElementById('cluster-health');
+  const label = document.getElementById('cluster-health-label');
+  const sub = document.getElementById('cluster-health-sub');
+
+  health.className = 'health-indicator';
+  if (val >= 70) {
+    health.classList.add('health-active');
+    label.innerHTML = '🟢 ACTIVE CLUSTER';
+    sub.textContent = 'All supporting GPs reporting regular activity. Peer learning functional.';
+  } else if (val >= 50) {
+    health.classList.add('health-partial');
+    label.innerHTML = '🟡 PARTIAL ENGAGEMENT';
+    sub.textContent = 'Some GPs require additional support. Engagement improving but below target.';
+  } else {
+    health.classList.add('health-weak');
+    label.innerHTML = '🔴 WEAK CLUSTER';
+    sub.textContent = 'Cluster requires immediate SDMA intervention. Assign mentor district.';
+  }
+}
+
+function drawClusterNetwork(cluster) {
+  const canvas = document.getElementById('clusterNetworkCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W/2, cy = H/2;
+  const r = Math.min(W, H) * 0.32;
+
+  const n = cluster.supporting.length;
+  cluster.supporting.forEach((gp, i) => {
+    const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+    const sx = cx + Math.cos(angle) * r;
+    const sy = cy + Math.sin(angle) * r;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(sx, sy);
+    ctx.strokeStyle = gp.status === 'active' ? 'rgba(46,125,50,0.4)' : gp.status === 'partial' ? 'rgba(232,169,0,0.4)' : 'rgba(198,40,40,0.35)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 36);
+  grad.addColorStop(0, 'var(--accent-orange)');
+  grad.addColorStop(1, '#C4471B');
+  ctx.beginPath();
+  ctx.arc(cx, cy, 36, 0, Math.PI*2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.shadowColor = 'rgba(217,126,58,0.5)';
+  ctx.shadowBlur = 14;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('MODEL GP', cx, cy - 4);
+  ctx.font = '9px Roboto Mono';
+  ctx.fillText(cluster.model.score + '/100', cx, cy + 10);
+
+  cluster.supporting.forEach((gp, i) => {
+    const angle = (i / n) * Math.PI * 2 - Math.PI/2;
+    const sx = cx + Math.cos(angle) * r;
+    const sy = cy + Math.sin(angle) * r;
+
+    const color = gp.status === 'active' ? 'var(--accent-green)' : gp.status === 'partial' ? 'var(--accent-yellow)' : 'var(--accent-red)';
+    const bgColor = gp.status === 'active' ? 'rgba(46,125,50,0.15)' : gp.status === 'partial' ? 'rgba(232,169,0,0.15)' : 'rgba(198,40,40,0.12)';
+
+    ctx.beginPath();
+    ctx.arc(sx, sy, 26, 0, Math.PI*2);
+    ctx.fillStyle = bgColor;
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.font = 'bold 8px Inter';
+    ctx.textAlign = 'center';
+    const short = gp.name.split(' ')[0];
+    ctx.fillText(short, sx, sy - 2);
+    ctx.font = '8px Roboto Mono';
+    ctx.fillText(gp.score, sx, sy + 10);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   BEHAVIOUR & PREPAREDNESS - PROGRESSION LOGIC
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function updateBehaviour() {
+  const gobag = +document.getElementById('s-gobag').value;
+  const evac = +document.getElementById('s-evac').value;
+  const cpr = +document.getElementById('s-cpr').value;
+  const shg = +document.getElementById('s-shg').value;
+  const emer = +document.getElementById('s-emer').value;
+
+  document.getElementById('v-gobag').textContent = gobag;
+  document.getElementById('v-evac').textContent = evac;
+  document.getElementById('v-cpr').textContent = cpr;
+  document.getElementById('v-shg').textContent = shg;
+  document.getElementById('v-emer').textContent = emer;
+
+  const avg = (gobag + evac + cpr + shg + emer) / 5;
+
+  // PREPAREDNESS LEVEL LOGIC
+  const prepEl = document.getElementById('prep-level-display');
+  const advEl = document.getElementById('prep-advice');
+  if (avg >= 60) {
+    prepEl.className = 'prep-level prep-high';
+    prepEl.textContent = '🟢 HIGH PREPAREDNESS';
+    advEl.textContent = 'Excellent! Community shows strong preparedness behaviour across all indicators. Maintain momentum through GAAVAT Mitra network.';
+  } else if (avg >= 40) {
+    prepEl.className = 'prep-level prep-moderate';
+    prepEl.textContent = '🟡 MODERATE PREPAREDNESS';
+    advEl.textContent = 'Communities show partial preparedness. Focus on increasing go-bag adoption and CPR training coverage to achieve HIGH level.';
+  } else {
+    prepEl.className = 'prep-level prep-low';
+    prepEl.textContent = '🔴 LOW PREPAREDNESS';
+    advEl.textContent = 'Critical gap in community preparedness. Intensify GAAVAT cycles, SHG sessions, and school drills immediately.';
+  }
+
+  // COMPOSITE RESILIENCE INDEX
+  const clampedRI = Math.min(100, Math.max(0, Math.round(avg * 0.6 + 35)));
+  document.getElementById('comp-ri').textContent = clampedRI;
+  document.getElementById('comp-ri-grade').textContent = getScoreGrade(clampedRI) + ' PERFORMANCE';
+
+  // UPDATE CHARTS
+  if (radarChart) {
+    radarChart.data.datasets[0].data = [gobag, evac, cpr, shg, emer];
+    radarChart.update();
+  }
+
+  if (behavLineChart) {
+    behavLineChart.data.datasets[0].data[5] = gobag;
+    behavLineChart.data.datasets[1].data[5] = evac;
+    behavLineChart.data.datasets[2].data[5] = cpr;
+    behavLineChart.data.datasets[3].data[5] = shg;
+    behavLineChart.update();
+  }
+
+  // BCC STAGE PROGRESSION CALCULATIONS
+  document.getElementById('stage-awareness-val').textContent = Math.round(evac * 1.3 > 100 ? 100 : evac * 1.3) + '%';
+  document.getElementById('stage-action-val').textContent = gobag + '%';
+  document.getElementById('stage-habit-val').textContent = Math.round(Math.min(gobag * 0.6, shg * 0.5)) + '%';
+  document.getElementById('stage-advocacy-val').textContent = Math.round(cpr * 0.8) + '%';
+
+  // COLOUR STAGES
+  const stages = ['awareness','action','habit','advocacy'];
+  const vals = [evac*1.3, gobag, Math.min(gobag*0.6,shg*0.5)*1.5, cpr*0.8];
+  stages.forEach((s, i) => {
+    const el = document.getElementById('stage-'+s);
+    const v = vals[i];
+    el.style.borderColor = v >= 60 ? 'var(--accent-green)' : v >= 35 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+    el.style.background = v >= 60 ? 'var(--accent-green-light)' : v >= 35 ? 'var(--accent-yellow-light)' : 'var(--accent-red-light)';
+  });
+
+  // BEHAVIOUR TABLE
+  const tbody = document.getElementById('behav-tbody');
+  const rows = [
+    ['Households with Go-Bag', gobag, 50, '%'],
+    ['Evacuation Awareness', evac, 70, '%'],
+    ['CPR Trained', cpr, 40, '%'],
+    ['SHG Participation', shg, 75, '%'],
+    ['Emergency Contact Awareness', emer, 65, '%'],
+  ];
+  tbody.innerHTML = rows.map(([label, cur, target, unit]) => {
+    const met = cur >= target;
+    const pct = Math.round((cur/target)*100);
+    return `<tr>
+      <td style="padding-left:20px;font-weight:600">${label}</td>
+      <td style="font-family:Roboto Mono,monospace;font-weight:700;color:${cur>=target?'var(--accent-green)':'var(--text-primary)'}">${cur}${unit}</td>
+      <td style="font-family:Roboto Mono,monospace;color:var(--text-tertiary)">${target}${unit}</td>
+      <td><span class="badge ${met?'badge-green':pct>=70?'badge-yellow':'badge-red'}">${met?'✅ MET':pct+'% THERE'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   TAB NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function switchTab(i) {
+  document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active', i===j));
+  document.querySelectorAll('.tab-panel').forEach((p,j) => p.classList.toggle('active', i===j));
+
+  if (i === 0 && !stateLineChart) {
+    setTimeout(() => { initStateLineChart(); generateMap(); renderRankTables(); }, 50);
+  }
+  if (i === 1 && !deptBarChart) {
+    setTimeout(() => { initDeptBarChart(); initAudiencePieChart(); initDistCycleChart(); updateDistrict(); }, 50);
+  }
+  if (i === 2 && !gpBarChart) {
+    setTimeout(() => { initGPBarChart(); updateGPCluster(); }, 50);
+  }
+  if (i === 3 && !radarChart) {
+    setTimeout(() => { initBehavLineChart(); initRadarChart(); updateBehaviour(); }, 50);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   DISASTER MODE - OPERATIONAL INTELLIGENCE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let disasterMode = false;
+function toggleDisasterMode() {
+  disasterMode = !disasterMode;
+  document.body.classList.toggle('disaster-mode', disasterMode);
+  document.getElementById('disasterToggle').classList.toggle('active', disasterMode);
+  document.getElementById('dm-label').textContent = disasterMode ? 'Disaster Mode' : 'Normal';
+
+  // OPERATIONAL LOGIC: Highlight high-risk districts
+  const redDistricts = DISTRICTS.filter(d => d.score < 50);
+  if (disasterMode) {
+    document.querySelectorAll('.kpi-card').forEach((c, i) => {
+      if (i === 0 || i === 4) c.classList.add('risk-highlight');
+    });
+  } else {
+    document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('risk-highlight'));
+  }
+
+  // Update charts
+  [stateLineChart, deptBarChart, distCycleChart, behavLineChart].forEach(chart => {
+    if (chart) chart.update();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   CLOCK
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function updateClock() {
+  const now = new Date();
+  const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
+    .map(x => String(x).padStart(2,'0')).join(':');
+  document.getElementById('clock').textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//   INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+window.addEventListener('DOMContentLoaded', () => {
+  populateDistrictSelects();
+  setTimeout(() => {
+    initStateLineChart();
+    generateMap();
+    renderRankTables();
+  }, 100);
+});
+</script>
+</body>
+</html>
